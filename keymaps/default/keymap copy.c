@@ -91,14 +91,14 @@ enum combos {
 };
 
 const uint16_t PROGMEM lr_combo[] = {KC_LEFT, KC_RGHT, COMBO_END};
-//const uint16_t PROGMEM esc_combo[] = {KC_Q, TD(X_CTL), COMBO_END};
+const uint16_t PROGMEM esc_combo[] = {KC_Q, TD(X_CTL), COMBO_END};
 //const uint16_t PROGMEM alttab_combo[] = {KC_Q, KC_W, COMBO_END};
 const uint16_t PROGMEM win_combo[] = {RSFT_T(KC_SCLN), LSG_T(KC_QUOT), COMBO_END};
 const uint16_t PROGMEM ud_combo[] = {KC_UP, KC_DOWN, COMBO_END};
 
 combo_t key_combos[] = {
   [LR_SPC] = COMBO(lr_combo, KC_SPC),             // Left + Right = Space
-  //[EQLQ_ESC] = COMBO(esc_combo, KC_ESC),          // Equal + Q = Escape
+  [EQLQ_ESC] = COMBO(esc_combo, KC_ESC),          // Equal + Q = Escape
   //[QW_ALTTAB] = COMBO(alttab_combo, ALT_TAB),     // Q + W = Alt + Tab Combo
   [COMMDOT_WIN] = COMBO(win_combo, KC_RGUI),     // Semicolon + Quote = Win
   [UD_BSPC] = COMBO(ud_combo, KC_BSPC),           // Up + Down = Backspace
@@ -108,10 +108,10 @@ combo_t key_combos[] = {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_BASE] = LAYOUT_split_3x6_5(
-        TD(TD_ESC),     KC_Q,  KC_W,     KC_E,     KC_R,              KC_T,                                          KC_Y,    KC_U,    KC_I,     KC_O,    RCTL_T(KC_P),     LSA_T(KC_MINS),
-        KC_LSFT,        KC_A,  KC_S,     KC_D,     KC_F,              KC_G,                                          KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
-        CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,     KC_V,              KC_B,                                          KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
-                               KC_LEFT,  KC_RGHT,  LT(LOWER, KC_TAB), KC_BSPC, LALT_T(KC_DEL),  LT(RAISE, KC_RGUI),  KC_SPC,  KC_ENT,  KC_UP,    KC_DOWN
+        TD(TD_ESC),      KC_Q,  KC_W,     KC_E,     KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    RCTL_T(KC_P),     LSA_T(KC_MINS),
+        KC_LSFT,        KC_A,  KC_S,     KC_D,     KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
+        CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,     KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
+                               KC_LEFT,  KC_RGHT,  LT(LOWER, KC_TAB), KC_BSPC, LALT_T(KC_DEL),     LT(RAISE, KC_RGUI),  KC_SPC,  KC_ENT,  KC_UP,    KC_DOWN
     ),
 
     [_LOWER] = LAYOUT_split_3x6_5(
@@ -129,6 +129,82 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 
 };
+
+
+// Alt + Tab Special Macro
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) { 
+    case ALT_TAB:
+      if (record->event.pressed) {
+        if (!is_alt_tab_active) {
+          is_alt_tab_active = true;
+          register_code(KC_LALT);
+        }
+        alt_tab_timer = timer_read();
+        register_code(KC_TAB);
+      } else {
+        unregister_code(KC_TAB);
+      }
+      break;
+  }
+  return true;
+}
+
+void matrix_scan_user(void) { 
+  if (is_alt_tab_active) {
+    if (timer_elapsed(alt_tab_timer) > 1000) {
+      unregister_code(KC_LALT);
+      is_alt_tab_active = false;
+    }
+  }
+}
+
+
+// Quad Tap
+td_state_t cur_dance(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) return TD_SINGLE_TAP;
+        else return TD_SINGLE_HOLD;
+    } else if (state->count == 2) {
+        if (state->interrupted) return TD_DOUBLE_SINGLE_TAP;
+        else if (state->pressed) return TD_DOUBLE_HOLD;
+        else return TD_DOUBLE_TAP;
+    }
+
+    if (state->count == 3) {
+        if (state->interrupted || !state->pressed) return TD_TRIPLE_TAP;
+        else return TD_TRIPLE_HOLD;
+    } else return TD_UNKNOWN;
+}
+
+static td_tap_t xtap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+void x_finished(tap_dance_state_t *state, void *user_data) {
+    xtap_state.state = cur_dance(state);
+    switch (xtap_state.state) {
+        case TD_SINGLE_TAP: register_code(KC_EQL); break;
+        case TD_SINGLE_HOLD: register_code(KC_LALT); break;
+        case TD_DOUBLE_TAP: register_code(KC_TAB); break;
+        case TD_DOUBLE_HOLD: register_code(KC_LCTL); break;
+        case TD_DOUBLE_SINGLE_TAP: tap_code(KC_EQL); register_code(KC_EQL); break;
+        default: break;
+    }
+}
+
+void x_reset(tap_dance_state_t *state, void *user_data) {
+    switch (xtap_state.state) {
+        case TD_SINGLE_TAP: unregister_code(KC_EQL); break;
+        case TD_SINGLE_HOLD: unregister_code(KC_LALT); break;
+        case TD_DOUBLE_TAP: unregister_code(KC_TAB); break;
+        case TD_DOUBLE_HOLD: unregister_code(KC_LCTL); break;
+        case TD_DOUBLE_SINGLE_TAP: unregister_code(KC_EQL); break;
+        default: break;
+    }
+    xtap_state.state = TD_NONE;
+}
 
 tap_dance_action_t tap_dance_actions[] = {
     [TD_0] = ACTION_TAP_DANCE_DOUBLE(KC_RPRN, KC_0),       // Single tap for '0', double tap for '('
