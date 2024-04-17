@@ -1,4 +1,4 @@
-# VOID Ergo S
+# VOID Ergo S (2024)
 
 A 3d printed, handwired, split keyboard with a layout similar to the Iris/Corne/Kyria by [Victor Lucachi](https://github.com/victorlucachi).
 
