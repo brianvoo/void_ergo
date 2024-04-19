@@ -54,6 +54,7 @@ enum {
     Y_CTL,
     TD_END,
     TD_MCTL,
+    TD_TBDEL
     // TD_RGHT_TAB,
 };
 
@@ -124,8 +125,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         TD(X_CTL),      KC_Q,  KC_W,     KC_E,        KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    KC_P,             LSA_T(KC_MINS),
         KC_LSFT,        KC_A,  KC_S,     KC_D,        KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
         CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
-                               TD(TD_MCTL),  TD(TD_END),  CMD_T(KC_DEL), KC_BSPC, LT(LOWER, KC_TAB),      LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
+                               TD(TD_MCTL),  CMD_T(KC_RGHT),  LT(LOWER, KC_TAB), KC_BSPC, KC_DEL,    LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
     ),
+
+    //  [_MAC] = LAYOUT_split_3x6_5(
+    //     TD(X_CTL),      KC_Q,  KC_W,     KC_E,        KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    KC_P,             LSA_T(KC_MINS),
+    //     KC_LSFT,        KC_A,  KC_S,     KC_D,        KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
+    //     CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
+    //                            TD(TD_MCTL),  TD(TD_END),  TD(Y_CTL), KC_BSPC, TD(TD_TBDEL),    LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
+    // ),    
 
     [_LOWER] = LAYOUT_split_3x6_5(
         KC_HOME,    TD(TD_1),   TD(TD_2),   TD(TD_3),   TD(TD_4),   TD(TD_5),                        KC_TRNS,  KC_7,    KC_8,     KC_9,     KC_PPLS,   KC_TRNS,
@@ -150,8 +158,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   switch (keycode) { 
     case ALT_TAB:
       if (record->event.pressed) {
-        if (!is_alt_tab_active) {
-          is_alt_tab_active = true;
+        if (!is_alt_tab_active) {         is_alt_tab_active = true;
           register_code(KC_LALT);
         }
         alt_tab_timer = timer_read();
@@ -228,22 +235,22 @@ static td_tap_t ytap_state = {
 void y_finished(tap_dance_state_t *state, void *user_data) {
     ytap_state.state = cur_dance(state);
     switch (ytap_state.state) {
-        case TD_SINGLE_TAP: register_code(KC_GRV); break;
-        case TD_SINGLE_HOLD: register_code(KC_LCTL); break;
-        case TD_DOUBLE_TAP: register_code(KC_END); break;
-        case TD_DOUBLE_HOLD: register_code(KC_LGUI); break;
-        case TD_DOUBLE_SINGLE_TAP: tap_code(KC_GRV); register_code(KC_GRV); break;
+        case TD_SINGLE_TAP: register_code(KC_DEL); break;
+        case TD_SINGLE_HOLD: register_code(KC_LGUI); break;
+        case TD_DOUBLE_TAP: register_code(KC_TAB); break;
+        case TD_DOUBLE_HOLD: layer_on(_LOWER); break;
+        // case TD_DOUBLE_SINGLE_TAP: tap_code(KC_DEL); register_code(KC_DEL); break;
         default: break;
     }
 };
 
 void y_reset(tap_dance_state_t *state, void *user_data) {
     switch (ytap_state.state) {
-        case TD_SINGLE_TAP: unregister_code(KC_GRV); break;
-        case TD_SINGLE_HOLD: unregister_code(KC_LCTL); break;
-        case TD_DOUBLE_TAP: unregister_code(KC_END); break;
-        case TD_DOUBLE_HOLD: unregister_code(KC_LGUI); break;
-        case TD_DOUBLE_SINGLE_TAP: unregister_code(KC_GRV); break;
+        case TD_SINGLE_TAP: unregister_code(KC_DEL); break;
+        case TD_SINGLE_HOLD: unregister_code(KC_LGUI); break;
+        case TD_DOUBLE_TAP: unregister_code(KC_TAB); break;
+        case TD_DOUBLE_HOLD: layer_off(_LOWER); break;
+        // case TD_DOUBLE_SINGLE_TAP: unregister_code(KC_DEL); break;
         default: break;
     }
     ytap_state.state = TD_NONE;
@@ -272,7 +279,11 @@ tap_dance_action_t tap_dance_actions[] = {
     [X_CTL] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished, x_reset),
     [Y_CTL] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, y_finished, y_reset),
     [TD_END] = ACTION_TAP_DANCE_DOUBLE(KC_RGHT, KC_END),
-    [TD_MCTL] = ACTION_TAP_DANCE_DOUBLE(KC_LEFT, KC_MCTL)
+    [TD_MCTL] = ACTION_TAP_DANCE_DOUBLE(KC_LEFT, KC_MCTL),
+    [TD_TBDEL] = ACTION_TAP_DANCE_DOUBLE(KC_DEL, KC_TAB),
     // [TD_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_EQL, KC_TAB),  // Single tap for Shift, double tap for Tab
     // [TD_RGHT_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_RGHT, KC_TAB),  // Single tap for Shift, double tap for Tab
 };
+
+// qmk flash -kb void_ergo -km default
+// qmk compile -kb void_ergo -km default
