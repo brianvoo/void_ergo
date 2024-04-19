@@ -9,12 +9,14 @@ https://github.com/qmk/qmk_firmware/blob/master/docs/keycodes_basic.md
 
 enum layer_names {
     _BASE,
+    _MAC,
     _RAISE,
     _LOWER,
 };
 
 #define LOWER  MO(_LOWER)
 #define RAISE  MO(_RAISE)
+#define MAC MO(_MAC)
  
 
 // Alt Tab
@@ -51,6 +53,7 @@ enum {
     X_CTL,
     Y_CTL,
     TD_END,
+    TD_MCTL,
     // TD_RGHT_TAB,
 };
 
@@ -117,6 +120,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                KC_LEFT,  TD(TD_END),  LT(LOWER, KC_TAB), KC_BSPC, KC_DEL,     LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
     ),
 
+     [_MAC] = LAYOUT_split_3x6_5(
+        TD(X_CTL),      KC_Q,  KC_W,     KC_E,        KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    KC_P,             LSA_T(KC_MINS),
+        KC_LSFT,        KC_A,  KC_S,     KC_D,        KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
+        CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
+                               TD(TD_MCTL),  TD(TD_END),  LT(LOWER, KC_TAB), KC_BSPC, CMD_T(KC_DEL),     LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
+    ),
+
     [_LOWER] = LAYOUT_split_3x6_5(
         KC_HOME,    TD(TD_1),   TD(TD_2),   TD(TD_3),   TD(TD_4),   TD(TD_5),                        KC_TRNS,  KC_7,    KC_8,     KC_9,     KC_PPLS,   KC_TRNS,
         KC_END,     TD(TD_6),   TD(TD_7),   TD(TD_8),   TD(TD_9),   TD(TD_0),                        KC_TRNS,  KC_4,    KC_5,     KC_6,     KC_RSFT,   KC_PAST,
@@ -128,40 +138,40 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,         KC_HOME,  KC_UP,    KC_END,    KC_PGUP,   KC_TRNS,                        KC_TRNS,  TD(TD_F7),    TD(TD_F8),    TD(TD_F9),  KC_F10,  KC_TRNS,
         RCS_T(KC_LSFT), KC_LEFT,  KC_DOWN,  KC_RGHT,   KC_PGDN,   KC_TRNS,                        KC_TRNS,  TD(TD_F4),    TD(TD_F5),    TD(TD_F6),  KC_F11,  KC_TRNS,
         KC_PSCR,        KC_TRNS,  KC_TRNS,  KC_TRNS,   KC_TRNS,   KC_TRNS,                        KC_TRNS,  TD(TD_F1),    TD(TD_F2),    TD(TD_F3),  KC_F12,  KC_TRNS,
-                                  KC_TRNS,  KC_TRNS,   KC_TRNS,   KC_TRNS,  KC_TRNS,    KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS
-    )
+                                  KC_TRNS,  KC_TRNS,   KC_TRNS,   KC_TRNS,  DF(_MAC),    KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS
+    ), 
 
 };                             
 
 
 
 // Alt + Tab Special Macro
-// bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-//   switch (keycode) { 
-//     case ALT_TAB:
-//       if (record->event.pressed) {
-//         if (!is_alt_tab_active) {
-//           is_alt_tab_active = true;
-//           register_code(KC_LALT);
-//         }
-//         alt_tab_timer = timer_read();
-//         register_code(KC_TAB);
-//       } else {
-//         unregister_code(KC_TAB);
-//       }
-//       break;
-//   }
-//   return true;
-// }
+/* bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) { 
+    case ALT_TAB:
+      if (record->event.pressed) {
+        if (!is_alt_tab_active) {
+          is_alt_tab_active = true;
+          register_code(KC_LALT);
+        }
+        alt_tab_timer = timer_read();
+        register_code(KC_TAB);
+      } else {
+        unregister_code(KC_TAB);
+      }
+      break;
+  }
+  return true;
+}
 
-// void matrix_scan_user(void) { 
-//   if (is_alt_tab_active) {
-//     if (timer_elapsed(alt_tab_timer) > 1000) {
-//       unregister_code(KC_LALT);
-//       is_alt_tab_active = false;
-//     }
-//   }
-// }
+void matrix_scan_user(void) { 
+  if (is_alt_tab_active) {
+    if (timer_elapsed(alt_tab_timer) > 1000) {
+      unregister_code(KC_LALT);
+      is_alt_tab_active = false;
+    }
+  }
+} */
 
 
 // Quad Tap
@@ -262,6 +272,7 @@ tap_dance_action_t tap_dance_actions[] = {
     [X_CTL] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, x_finished, x_reset),
     [Y_CTL] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, y_finished, y_reset),
     [TD_END] = ACTION_TAP_DANCE_DOUBLE(KC_RGHT, KC_END),
+    [TD_MCTL] = ACTION_TAP_DANCE_DOUBLE(KC_LEFT, KC_MCTL)
     // [TD_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_EQL, KC_TAB),  // Single tap for Shift, double tap for Tab
     // [TD_RGHT_TAB] = ACTION_TAP_DANCE_DOUBLE(KC_RGHT, KC_TAB),  // Single tap for Shift, double tap for Tab
 };
