@@ -8,8 +8,8 @@ https://github.com/qmk/qmk_firmware/blob/master/docs/keycodes_basic.md
 #include QMK_KEYBOARD_H
 
 enum layer_names {
-    _BASE,
     _MAC,
+    _BASE,
     _RAISE,
     _LOWER,
 };
@@ -90,7 +90,7 @@ enum combos {
   // Left hand
   LR_SPC, 
   EQLQ_ESC,
-  // QW_ALTTAB,
+  QW_MCTL,
   
   // Right hand
   COMMDOT_WIN,
@@ -99,14 +99,14 @@ enum combos {
 
 const uint16_t PROGMEM lr_combo[] = {KC_LEFT, TD(TD_END), COMBO_END};
 const uint16_t PROGMEM esc_combo[] = {KC_Q, TD(X_CTL), COMBO_END};
-// const uint16_t PROGMEM alttab_combo[] = {KC_Q, KC_W, COMBO_END};
+const uint16_t PROGMEM mctl_combo[] = {KC_Q, KC_W, COMBO_END};
 const uint16_t PROGMEM win_combo[] = {RSFT_T(KC_SCLN), LSG_T(KC_QUOT), COMBO_END};
 const uint16_t PROGMEM ud_combo[] = {KC_UP, KC_DOWN, COMBO_END};
 
 combo_t key_combos[] = {
   [LR_SPC] = COMBO(lr_combo, KC_SPC),             // Left + Right = Space
   [EQLQ_ESC] = COMBO(esc_combo, KC_ESC),          // Equal + Q = Escape
-  // [QW_ALTTAB] = COMBO(alttab_combo, ALT_TAB),     // Q + W = Alt + Tab Combo
+  [QW_MCTL] = COMBO(mctl_combo, KC_MCTL),     // Q + W = Alt + Tab Combo
   [COMMDOT_WIN] = COMBO(win_combo, KC_RGUI),     // Semicolon + Quote = Win
   [UD_BSPC] = COMBO(ud_combo, KC_BSPC),           // Up + Down = Backspace
 };
@@ -117,7 +117,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_5(
         TD(X_CTL),      KC_Q,  KC_W,     KC_E,        KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    KC_P,             LSA_T(KC_MINS),
         KC_LSFT,        KC_A,  KC_S,     KC_D,        KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
-        CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
+        CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RCMD_T(KC_SLSH),  C_S_T(KC_BSLS),
                                KC_LEFT,  TD(TD_END),  LT(LOWER, KC_TAB), KC_BSPC, KC_DEL,     LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
     ),
 
@@ -125,7 +125,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         TD(X_CTL),      KC_Q,  KC_W,     KC_E,        KC_R,              KC_T,                                     KC_Y,    KC_U,    KC_I,     KC_O,    KC_P,             LSA_T(KC_MINS),
         KC_LSFT,        KC_A,  KC_S,     KC_D,        KC_F,              KC_G,                                     KC_H,    KC_J,    KC_K,     KC_L,    RSFT_T(KC_SCLN),  LSG_T(KC_QUOT),
         CTL_T(KC_GRV),  KC_Z,  KC_X,     KC_C,        KC_V,              KC_B,                                     KC_N,    KC_M,    KC_COMM,  KC_DOT,  RGUI_T(KC_SLSH),  C_S_T(KC_BSLS),
-                               TD(TD_MCTL),  CMD_T(KC_RGHT),  LT(LOWER, KC_TAB), KC_BSPC, KC_DEL,    LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
+                               KC_LEFT,  KC_RGHT,  LT(LOWER, KC_TAB), CMD_T(KC_BSPC), KC_DEL,    LT(RAISE, KC_RGUI),  KC_SPC,  LT(LOWER, KC_ENT),  KC_UP,    KC_DOWN  
     ),
 
     //  [_MAC] = LAYOUT_split_3x6_5(
@@ -235,10 +235,10 @@ static td_tap_t ytap_state = {
 void y_finished(tap_dance_state_t *state, void *user_data) {
     ytap_state.state = cur_dance(state);
     switch (ytap_state.state) {
-        case TD_SINGLE_TAP: register_code(KC_DEL); break;
-        case TD_SINGLE_HOLD: register_code(KC_LGUI); break;
-        case TD_DOUBLE_TAP: register_code(KC_TAB); break;
-        case TD_DOUBLE_HOLD: layer_on(_LOWER); break;
+        case TD_SINGLE_TAP: register_code(KC_GRV); break;
+        case TD_SINGLE_HOLD: register_code(KC_RCTL); break;
+        case TD_DOUBLE_TAP: register_code(KC_MCTL); break;
+        case TD_DOUBLE_HOLD: register_code(KC_MCTL); break;
         // case TD_DOUBLE_SINGLE_TAP: tap_code(KC_DEL); register_code(KC_DEL); break;
         default: break;
     }
@@ -246,10 +246,10 @@ void y_finished(tap_dance_state_t *state, void *user_data) {
 
 void y_reset(tap_dance_state_t *state, void *user_data) {
     switch (ytap_state.state) {
-        case TD_SINGLE_TAP: unregister_code(KC_DEL); break;
-        case TD_SINGLE_HOLD: unregister_code(KC_LGUI); break;
-        case TD_DOUBLE_TAP: unregister_code(KC_TAB); break;
-        case TD_DOUBLE_HOLD: layer_off(_LOWER); break;
+        case TD_SINGLE_TAP: unregister_code(KC_GRV); break;
+        case TD_SINGLE_HOLD: unregister_code(KC_RCTL); break;
+        case TD_DOUBLE_TAP: unregister_code(KC_MCTL); break;
+        case TD_DOUBLE_HOLD: register_code(KC_MCTL); break;
         // case TD_DOUBLE_SINGLE_TAP: unregister_code(KC_DEL); break;
         default: break;
     }
